@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交通壓力即時監測模擬器 (P = W × t^1.5)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1e1e;
+            color: #f0f0f0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: #2d2d30;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+        }
+        h2 { text-align: center; color: #4daafc; margin-top: 0; }
+        .control-group { margin-bottom: 25px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #cccccc; }
+        input[type="range"] { width: 100%; cursor: pointer; accent-color: #4daafc; }
+        input[type="number"] { 
+            width: 100%; padding: 10px; box-sizing: border-box; 
+            background: #1e1e1e; border: 1px solid #555; color: white;
+            border-radius: 6px; font-size: 16px;
+        }
+        .value-display { float: right; color: #4daafc; font-weight: bold; font-size: 18px; }
+        .result-box { 
+            margin-top: 30px; padding: 25px; background-color: #3e3e42; 
+            border-radius: 8px; text-align: center; border: 2px solid #555;
+            transition: all 0.3s ease;
+        }
+        .pressure-value { font-size: 56px; font-weight: bold; color: #ffffff; margin: 10px 0; }
+        .warning { background-color: #4a1919; border: 2px solid #ff4d4d; }
+        .warning .pressure-value { color: #ff4d4d; }
+        .warning-text { font-size: 22px; font-weight: bold; color: #ff4d4d; display: none; margin-top: 10px;}
+        .warning .warning-text { display: block; }
+        .formula { text-align: center; color: #888; font-size: 14px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🚦 交通壓力閾值測試儀</h2>
+        <div class="formula">計算公式：P = Σ (車輛權重 W) × (等待時間 t) ^ 1.5</div>
+
+        <div class="control-group">
+            <label>🚗 汽車數量 (權重 W=1.0) <span id="car-val" class="value-display">1</span></label>
+            <input type="range" id="car" min="0" max="15" value="1" oninput="updateCalculation()">
+        </div>
+
+        <div class="control-group">
+            <label>🚌 公車數量 (權重 W=2.5) <span id="bus-val" class="value-display">0</span></label>
+            <input type="range" id="bus" min="0" max="5" value="0" oninput="updateCalculation()">
+        </div>
+
+        <div class="control-group">
+            <label>🛵 機車數量 (權重 W=0.8) <span id="moto-val" class="value-display">0</span></label>
+            <input type="range" id="moto" min="0" max="20" value="0" oninput="updateCalculation()">
+        </div>
+
+        <div class="control-group">
+            <label>⏱️ 等待時間 t (秒) <span id="time-val" class="value-display">0</span></label>
+            <input type="range" id="time" min="0" max="120" value="0" oninput="updateCalculation()">
+        </div>
+
+        <div class="control-group">
+            <label>🎯 目標強制截斷閾值 (Threshold)</label>
+            <input type="number" id="threshold" value="800" oninput="updateCalculation()">
+        </div>
+
+        <div id="resultBox" class="result-box">
+            <div style="color:#aaa; font-size:16px;">當前路口總壓力值 (P)</div>
+            <div id="pressureValue" class="pressure-value">0.0</div>
+            <div class="warning-text">⚠️ 突破閾值！觸發號誌截斷</div>
+        </div>
+    </div>
+
+    <script>
+        function updateCalculation() {
+            // 抓取滑桿數值
+            const car = parseInt(document.getElementById('car').value);
+            const bus = parseInt(document.getElementById('bus').value);
+            const moto = parseInt(document.getElementById('moto').value);
+            const time = parseInt(document.getElementById('time').value);
+            const threshold = parseFloat(document.getElementById('threshold').value) || 0;
+
+            // 更新畫面上的數字
+            document.getElementById('car-val').textContent = car;
+            document.getElementById('bus-val').textContent = bus;
+            document.getElementById('moto-val').textContent = moto;
+            document.getElementById('time-val').textContent = time + ' 秒';
+
+            // 核心邏輯計算
+            const baseWeight = (car * 1.0) + (bus * 2.5) + (moto * 0.8);
+            const pressure = baseWeight * Math.pow(time, 1.5);
+            
+            // 顯示結果
+            document.getElementById('pressureValue').textContent = pressure.toFixed(1);
+
+            // 閾值警報邏輯
+            const resultBox = document.getElementById('resultBox');
+            if (pressure >= threshold && pressure > 0) {
+                resultBox.classList.add('warning');
+            } else {
+                resultBox.classList.remove('warning');
+            }
+        }
+        // 初始載入時計算一次
+        window.onload = updateCalculation;
+    </script>
+</body>
+</html>
