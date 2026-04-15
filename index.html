@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>交通壓力即時監測模擬器 (P = W × t^1.5)</title>
+    <title>交通壓力即時監測模擬器 (基於 PCU 與非線性壓力)</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -41,27 +41,31 @@
         .warning .pressure-value { color: #ff4d4d; }
         .warning-text { font-size: 22px; font-weight: bold; color: #ff4d4d; display: none; margin-top: 10px;}
         .warning .warning-text { display: block; }
-        .formula { text-align: center; color: #888; font-size: 14px; margin-bottom: 20px; }
+        .formula { text-align: center; color: #888; font-size: 14px; margin-bottom: 20px; line-height: 1.6;}
+        .highlight { color: #ffcc00; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>🚦 交通壓力閾值測試儀</h2>
-        <div class="formula">計算公式：P = Σ (車輛權重 W) × (等待時間 t) ^ 1.5</div>
-
-        <div class="control-group">
-            <label>🚗 汽車數量 (權重 W=1.0) <span id="car-val" class="value-display">1</span></label>
-            <input type="range" id="car" min="0" max="15" value="1" oninput="updateCalculation()">
+        <div class="formula">
+            計算公式：P = Σ (實體空間權重 PCU) × (等待時間 t) ^ 1.5<br>
+            <span class="highlight">已導入交通工程標準小客車當量 (PCU) 系統</span>
         </div>
 
         <div class="control-group">
-            <label>🚌 公車數量 (權重 W=2.5) <span id="bus-val" class="value-display">0</span></label>
-            <input type="range" id="bus" min="0" max="5" value="0" oninput="updateCalculation()">
+            <label>🚗 汽車數量 (PCU W=1.0) <span id="car-val" class="value-display">1</span></label>
+            <input type="range" id="car" min="0" max="200" value="1" oninput="updateCalculation()">
         </div>
 
         <div class="control-group">
-            <label>🛵 機車數量 (權重 W=0.8) <span id="moto-val" class="value-display">0</span></label>
-            <input type="range" id="moto" min="0" max="20" value="0" oninput="updateCalculation()">
+            <label>🚌 公車/大型車數量 (PCU W=2.0) <span id="bus-val" class="value-display">0</span></label>
+            <input type="range" id="bus" min="0" max="200" value="0" oninput="updateCalculation()">
+        </div>
+
+        <div class="control-group">
+            <label>🛵 機車數量 (PCU W=0.3) <span id="moto-val" class="value-display">0</span></label>
+            <input type="range" id="moto" min="0" max="200" value="0" oninput="updateCalculation()">
         </div>
 
         <div class="control-group">
@@ -77,7 +81,7 @@
         <div id="resultBox" class="result-box">
             <div style="color:#aaa; font-size:16px;">當前路口總壓力值 (P)</div>
             <div id="pressureValue" class="pressure-value">0.0</div>
-            <div class="warning-text">⚠️ 突破閾值！觸發號誌截斷</div>
+            <div class="warning-text">⚠️ 突破閾值！觸發號誌強制截斷</div>
         </div>
     </div>
 
@@ -96,8 +100,9 @@
             document.getElementById('moto-val').textContent = moto;
             document.getElementById('time-val').textContent = time + ' 秒';
 
-            // 核心邏輯計算
-            const baseWeight = (car * 1.0) + (bus * 2.5) + (moto * 0.8);
+            // 核心邏輯計算 (導入最新 PCU 權重)
+            // 汽車=1.0, 公車=2.0, 機車=0.3
+            const baseWeight = (car * 1.0) + (bus * 2.0) + (moto * 0.3);
             const pressure = baseWeight * Math.pow(time, 1.5);
             
             // 顯示結果
